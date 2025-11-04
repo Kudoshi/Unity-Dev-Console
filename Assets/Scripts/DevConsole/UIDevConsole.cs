@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -20,6 +21,7 @@ public class UIDevConsole : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private int _maxLogCount = 75;
+    [SerializeField] private int _maxHelpListPerPage = 15;
     [SerializeField] private Color _errorLogColor;
     [SerializeField] private Color _warningLogColor;
     [SerializeField] private Color _normalLogColor;
@@ -88,7 +90,7 @@ public class UIDevConsole : MonoBehaviour
 
     public void UI_HelpBtn()
     {
-        PrintHelp();
+        PrintCommandList();
     }
 
     public void ShowDevConsole()
@@ -112,23 +114,37 @@ public class UIDevConsole : MonoBehaviour
     [ConsoleCmd("Show how to use dev console")]
     public void Help()
     {
-        Debug.Log("------- HOW TO USE DEV CONSOLE -------");
-        Debug.Log("Format: 'function parameter1 parameter2'");
-        Debug.Log("   E.g. calculate 1 1 1");
-        Debug.Log("   E.g. testlog \"hello world\"");
-        Debug.Log("   E.g. testvector3 3,3,3");
-        Debug.Log("   E.g. clear");
+        CreateLog($"========================================");
+        CreateLog("------- HOW TO USE DEV CONSOLE -------");
+        CreateLog("Format: 'function parameter1 parameter2'");
+        CreateLog("   E.g. calculate 1 1 1");
+        CreateLog("   E.g. testlog \"hello world\"");
+        CreateLog("   E.g. testvector3 3,3,3");
+        CreateLog("   E.g. clear");
+        CreateLog("   ");
+        CreateLog("   Type commands <page index> - to access different pages of the commands");
 
-        PrintHelp();
+        PrintCommandList();
     }
 
-    [ConsoleCmd("Show list of commands")]
-    public void Commands()
+    [ConsoleCmd("Show list of commands. Give page index to access different pages of the commands")]
+    public void Commands(int pageIndex = 1)
     {
-        PrintHelp();
+        PrintCommandList(pageIndex);
+    }
+
+    [ConsoleCmd("Show list of ALL commands")]
+    public void CommandsAll()
+    {
+        PrintCommandList(1, true);
     }
 
     private void HandleLog(string condition, string stackTrace, LogType type)
+    {
+        CreateLog(condition, type);
+    }
+
+    private void CreateLog(string message, LogType type = LogType.Log)
     {
         if (_logList.Count >= _maxLogCount)
         {
@@ -136,43 +152,55 @@ public class UIDevConsole : MonoBehaviour
             _logList.RemoveAt(0);
         }
 
-        _logList.Add(CreateLog(condition, type));
-    }
-
-    private TextMeshProUGUI CreateLog(string message, LogType type)
-    {
         TextMeshProUGUI text = Instantiate(_logMsgPrefab, _logParent);
-        text.color = type == LogType.Exception ? _errorLogColor : type == LogType.Warning ? _warningLogColor : _normalLogColor;
+        text.color = type == LogType.Exception? _errorLogColor: type == LogType.Error? _errorLogColor :
+            type == LogType.Warning ? _warningLogColor : _normalLogColor;
         text.text = ($"[{System.DateTime.Now.ToString("HH:mm:ss")}]  {message}"); 
         text.gameObject.SetActive(true);
 
-        return text;
+        _logList.Add(text);
     }
 
     private void InputEntered()
     {
         string cmd = _cmdInput.text;
         Debug.Log(cmd);
-        DeveloperConsole.Instance.ParseCommand(cmd);
         _cmdInput.text = "";
         SelectInputField();
         _viewCurrentHistoryIndex = -1;
-
         Util.WaitNextFrame(this, Util_ScrollDown);
 
+        DeveloperConsole.Instance.ParseCommand(cmd);
     }
 
-    private void PrintHelp()
+    private void PrintCommandList(int pageIndex = 1, bool commandListAll = false)
     {
+        int maxHelpListPerPage = !commandListAll? _maxHelpListPerPage : 999;
+
         Dictionary<string, CommandData> commandList = DeveloperConsole.Instance.GetListOfCommands();
+        int maxPageCount = (commandList.Count / (maxHelpListPerPage + 1)) + 1;
 
-        Debug.Log("------- HELP COMMAND LIST -------");
+        CreateLog($"========================================");
+        CreateLog("=======[ HELP COMMAND LIST ]=======");
+        CreateLog($"List of commands (Pg {pageIndex} / {maxPageCount})");
+        int startingCmdIdx = (pageIndex - 1) * maxHelpListPerPage;
 
-        foreach (KeyValuePair<string, CommandData> command in commandList)
+        if (startingCmdIdx >= commandList.Count)
         {
-            Debug.Log($"  {command.Key} - {command.Value.Description}");
+            CreateLog("Help page count exceeded!");
+            return;
         }
-        Debug.Log("-------------------");
+
+        List<KeyValuePair<string, CommandData>> commandsArr = commandList.ToList();
+
+        for (int i = startingCmdIdx; i < commandsArr.Count && i < (startingCmdIdx + maxHelpListPerPage); i++)
+        {
+            CreateLog($"    {commandsArr[i].Key} - {commandsArr[i].Value.Description}");
+        }
+
+
+        CreateLog($"-------[ Pg {pageIndex} / {maxPageCount} ]-------");
+        CreateLog($"========================================");
 
         Util.WaitNextFrame(this, Util_ScrollDown);
     }

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
-using UnityEngine.Windows;
 
 
 /// <summary>
@@ -19,7 +18,6 @@ using UnityEngine.Windows;
 public class DeveloperConsole : Singleton<DeveloperConsole> 
 {
     public static int MAX_HISTORY_COMMAND_STORE = 6;
-
 
     private Dictionary<string, CommandData> _commandList = new Dictionary<string, CommandData>();
     private Dictionary<string, string[]> _instanceMethodsReference = new Dictionary<string, string[]>(); // Stores reference to what instance has what CommandData
@@ -90,31 +88,31 @@ public class DeveloperConsole : Singleton<DeveloperConsole>
             return; 
         }
 
+        bool parametersOkay = true;
+        CommandData commandData = _commandList[commandSplitted[0]];
+        object[] parameters = null;
+
         try
-        {
-            CommandData commandData = _commandList[commandSplitted[0]];
-
-            object[] parameters = null;
-            bool parametersOkay = true;
-
+        { 
             if (commandSplitted.Length > 1)
             {
                 parametersOkay = ParseParameters(commandData.Method, commandSplitted[1], out parameters);
-            }
-
-            if (parametersOkay)
-            {
-                commandData.Method.Invoke(commandData.Instance, parameters);
-                _commandHistory.Add(command);
-            }
-            else
-            {
-                throw new Exception("Invalid Parameters");
             }
         }
         catch (Exception e)
         {
             Debug.Log("[CONSOLE] Invalid command: " + e.Message);
+        }
+
+        // If it crashes here. It is all good. Let it throw the debug error properly
+        if (parametersOkay)
+        {
+            commandData.Method.Invoke(commandData.Instance, parameters);
+            _commandHistory.Add(command);
+        }
+        else
+        {
+            throw new Exception("Invalid Parameters");
         }
     }
 

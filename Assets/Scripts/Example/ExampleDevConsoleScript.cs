@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 
 public class ExampleDevConsoleScript : MonoBehaviour
@@ -35,6 +36,7 @@ public class ExampleDevConsoleScript : MonoBehaviour
         Debug.Log(str + number);
     }
 
+
     [ConsoleCmd("Calculates 4 number")]
     public void TestCalculate(int n1, int n2, int n3, int n4)
     {
@@ -59,5 +61,24 @@ public class ExampleDevConsoleScript : MonoBehaviour
     public void TestVector3(Vector3 vec)
     {
         Debug.Log(vec);
+    }
+
+    [ConsoleCmd]
+    public void TriggerWarning()
+    {
+        Debug.LogWarning("This is a warning");
+    }
+
+    [ConsoleCmd]
+    public void TriggerError()
+    {
+        Debug.LogError("This is error");
+    }
+
+    [ConsoleCmd]
+    public void TriggerRealError()
+    {
+        int[] ints = new int[0];
+        int i = ints[1];
     }
 }
