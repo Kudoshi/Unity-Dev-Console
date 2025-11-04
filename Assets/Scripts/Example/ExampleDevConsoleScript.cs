@@ -54,4 +54,10 @@ public class ExampleDevConsoleScript : MonoBehaviour
     {
         Debug.Log(enm);
     }
+
+    [ConsoleCmd("Test Vec3")]
+    public void TestVector3(Vector3 vec)
+    {
+        Debug.Log(vec);
+    }
 }

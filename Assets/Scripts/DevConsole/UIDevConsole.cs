@@ -116,6 +116,7 @@ public class UIDevConsole : MonoBehaviour
         Debug.Log("Format: 'function parameter1 parameter2'");
         Debug.Log("   E.g. calculate 1 1 1");
         Debug.Log("   E.g. testlog \"hello world\"");
+        Debug.Log("   E.g. testvector3 3,3,3");
         Debug.Log("   E.g. clear");
 
         PrintHelp();
